@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "main_up (default: load weights, report metrics)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_up.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        },
+        {
+            "name": "main_up: pick mode (load weights, report metrics)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_up.py",
+            "args": ["--mode", "${input:mode}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        },
+        {
+            "name": "main_up: fast (--score-only)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_up.py",
+            "args": ["--mode", "${input:mode}", "--score-only"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        },
+        {
+            "name": "main_up: retrain (--train, overwrites weights)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_up.py",
+            "args": ["--mode", "${input:mode}", "--train"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        }
+    ],
+    "inputs": [
+        {
+            "id": "mode",
+            "type": "pickString",
+            "description": "operating condition",
+            "options": ["dry", "rain", "storm"],
+            "default": "dry"
+        }
+    ]
+}

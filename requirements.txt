@@ -1,0 +1,12 @@
+# versions verified on this machine (conda env: pytorch_py39, Python 3.9)
+torch==1.12.1+cu113
+torchvision==0.13.1+cu113
+timm==0.9.16
+numpy
+pandas
+openpyxl          # pandas.read_excel for data_bsm1_32/*.xlsx
+scikit-learn      # roc_auc_score / average_precision_score
+scipy             # minimize, used by src/spot.py
+matplotlib        # imported at the top of src/spot.py
+tqdm              # imported at the top of src/spot.py
+
