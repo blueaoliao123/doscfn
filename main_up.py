@@ -87,10 +87,6 @@ BK_ALIAS = {
     "resnext101": "resnext100",
 }
 
-LM_BY_MODE = {
-    "dry": (0.98, 1.0),
-}
-
 # format tag of the self-contained checkpoint, validated on load
 CKPT_FORMAT = "doscfn-ckpt-v1"
 
@@ -717,7 +713,7 @@ def load_bundle(path, device=None):
         srf=cfg["srf"], adapter_layers=cfg["adapter_layers"], d_embe=cfg["d_embe"],
         input_shape=cfg["input_shape"], patchsize=cfg["patchsize"],
         patchstride=cfg["patchstride"],
-        lm=None, batch_size=16, eval_batch_size=64, seed=ck.get("meta", {}).get("seed"),
+        batch_size=16, eval_batch_size=64, seed=ck.get("meta", {}).get("seed"),
     )
     feature_aggregator, feature_dimensions, model, pre_projection = build_model(cfg_args, device)
     model.load_state_dict(ck["main_net"])
@@ -861,9 +857,8 @@ def calc_point2point(predict, actual):
     return f1, precision, recall, TP, TN, FP, FN
 
 
-def pot_eval(init_score, score, label, lm, q=1e-5, level=0.02):
-    """init_score holds the train scores, used only to fit the initial POT threshold."""
-    lms = lm[0]
+def pot_eval(init_score, score, label, q=1e-5):
+    lms = 0.98
     while True:
         try:
             s = SPOT(q)
@@ -874,7 +869,7 @@ def pot_eval(init_score, score, label, lm, q=1e-5, level=0.02):
         else:
             break
     ret = s.run(dynamic=False)
-    pot_th = np.mean(ret["thresholds"]) * lm[1]
+    pot_th = np.mean(ret["thresholds"]) * 1.0
     pred = adjust_predicts(score, label, pot_th, calc_latency=False)
     p_t = calc_point2point(pred, label)
     return {
@@ -945,9 +940,8 @@ def test_metrics(train_loader, test_loader, labels_1d, feature_aggregator,
                      model, pre_projection, args, device)
 
     m = {}
-    lm = LM_BY_MODE[args.mode] if args.lm is None else tuple(args.lm)
     try:
-        res, _ = pot_eval(tr, te, labels_1d, lm=lm)
+        res, _ = pot_eval(tr, te, labels_1d)
         m["precision"] = res["precision"]
         m["recall"] = res["recall"]
         m["pa_f1"] = res["f1"]
@@ -1164,8 +1158,7 @@ def score(args, tag):
         labels = np.array(test_label.view(-1, 1))
 
     labelsFinal = (np.sum(labels, axis=1) >= 1) + 0
-    lm = LM_BY_MODE[args.mode] if args.lm is None else tuple(args.lm)
-    result, _ = pot_eval(train_scores, test_scores, labelsFinal, lm=lm)
+    result, _ = pot_eval(train_scores, test_scores, labelsFinal)
 
     print("\n=========== DOSCFN on BSM1 ===========")
     print(f"mode={args.mode}  backbone={args.backbone}  layers={args.layers}")
@@ -1222,7 +1215,6 @@ def parse_args():
                    help="TensorBoard log directory, default ./runs/<run name>")
     p.add_argument("--train-batches", type=int, default=37, dest="train_batches",
                    help="first N batches are used for training, the rest for validation")
-    p.add_argument("--lm", type=float, nargs=2, default=None, help="override the POT threshold scaling factors")
     p.add_argument("--seed", type=int, default=1,
                    help="random seed, default 1. Fixes random/numpy/torch (CPU+GPU), "
                         "enables cuDNN deterministic and disables benchmark "
